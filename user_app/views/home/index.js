@@ -16,3 +16,4 @@ const Home = () => {
   );
 };
 export default Home;
+export const HOME = "home";
