@@ -29,11 +29,15 @@ def get_driving_distance(lat1, lon1, lat2, lon2):
     data = response.json()
 
     # Extract the driving distance from the API response
-    distance = data["routes"][0]["distance"]  # Distance in meters
-
+    key_s = data.keys()
+    if 'routes' in key_s:
+        distance = data['routes'][0]['distance']  # Distance in meters
+    else:
+        return 'inf'
+    print(distance)
     return distance
 
-@app.route("/closest_point", methods=["POST"])
+@app.route("/closest-point", methods=["POST"])
 def find_closest_point():
     data = request.get_json()
     lat = data["lat"]
@@ -61,7 +65,10 @@ def find_closest_point():
         # Check if the current data point is the closest so far
         if distance < closest_distance:
             closest_distance = distance
-            closest_point = doc_data
+            closest_point = {
+                "latitude": point_lat,
+                "longitude": point_lon
+            } 
 
     return jsonify({
         "closest_point": closest_point,
