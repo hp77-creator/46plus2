@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:user_app/map.dart';
+import 'package:user_app/routers.dart';
+import 'screeens/login.dart' show LoginPage;
 
 void main() {
   runApp(const MyApp());
@@ -10,6 +12,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Park+', home: const MapSample());
+    return const MaterialApp(
+      title: 'Park+',
+      home: MapSample(),
+      initialRoute: LoginPage.route,
+      onGenerateRoute: Routers.generateRoute,
+    );
   }
 }
