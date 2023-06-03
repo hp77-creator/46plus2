@@ -80,6 +80,13 @@ def find_closest_point():
 def fetch_and_return_all_data():
     data = all_ppl_locations()
     return jsonify({"data" : data})
+
+@app.route("/book", methods=["POST"])
+def book_slot():
+    try:
+        data = request.get_json()
+        
+
   
 # driver function
 if __name__ == '__main__':
