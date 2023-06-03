@@ -35,58 +35,70 @@ def get_driving_distance(lat1, lon1, lat2, lon2):
         distance = data['routes'][0]['distance']  # Distance in meters
     else:
         return 'inf'
-    print(distance)
+    # print(distance)
     return distance
 
 @app.route("/closest-point", methods=["POST"])
 def find_closest_point():
-    data = request.get_json()
-    lat = data["lat"]
-    lon = data["lon"]
+    try:
+        data = request.get_json()
+    
+        lat = data["lat"]
+        lon = data["lon"]
 
-    # Retrieve all data points from the Firestore collection
-    collection_ref = db.collection("ppl_locations")
-    docs = collection_ref.get()
+        # Retrieve all data points from the Firestore collection
+        collection_ref = db.collection("ppl_locations")
+        docs = collection_ref.get()
 
-    closest_distance = float("inf")
-    closest_point = None
+        closest_distance = float("inf")
+        closest_point = None
 
-    # Iterate through all data points and find the closest one
-    for doc in docs:
-        doc_data = doc.to_dict()
-        point_geopoint = doc_data["location"]
+        # Iterate through all data points and find the closest one
+        for doc in docs:
+            doc_data = doc.to_dict()
+            point_geopoint = doc_data["location"]
 
-        # Retrieve latitude and longitude from the GeoPoint
-        point_lat = point_geopoint.latitude
-        point_lon = point_geopoint.longitude
+            # Retrieve latitude and longitude from the GeoPoint
+            point_lat = point_geopoint.latitude
+            point_lon = point_geopoint.longitude
 
-        # Calculate the driving distance using an external API (e.g., Google Maps)
-        distance = get_driving_distance(lat, lon, point_lat, point_lon)
+            # Calculate the driving distance using an external API (e.g., Google Maps)
+            distance = get_driving_distance(lat, lon, point_lat, point_lon)
 
-        # Check if the current data point is the closest so far
-        if distance < closest_distance:
-            closest_distance = distance
-            closest_point = {
-                "latitude": point_lat,
-                "longitude": point_lon
-            } 
+            # Check if the current data point is the closest so far
+            if distance < closest_distance:
+                closest_distance = distance
+                closest_point = {
+                    "latitude": point_lat,
+                    "longitude": point_lon
+                } 
 
-    return jsonify({
-        "closest_point": closest_point,
-        "distance": closest_distance
-    })
+        return jsonify({
+            "closest_point": closest_point,
+            "distance": closest_distance
+        })
+    except Exception as e:
+        # print(e)
+        return jsonify({
+            'error' : e
+        })
 
-@app.route("/fetch-all", methods=["POST"])
+@app.route("/fetch-all", methods=["GET"])
 def fetch_and_return_all_data():
-    data = all_ppl_locations()
+    data = all_ppl_locations(db=db)
     return jsonify({"data" : data})
 
 @app.route("/book", methods=["POST"])
 def book_slot():
     try:
         data = request.get_json()
-        
-
+        collection_ref = db.collection("users").document(data['user_id']).collection('bookings')
+        doc_ref = collection_ref.document()
+        data.pop('user_id')
+        data['location_id'] = "/ppl_locations/" + data['location_id']
+        doc_ref.set(data)
+    except Exception as e:
+        print(e)
   
 # driver function
 if __name__ == '__main__':
