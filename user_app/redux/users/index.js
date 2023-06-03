@@ -3,6 +3,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 // Define the initial state using that type
 const initialState = {
   value: 0,
+  isLoggedIn: false,
 };
 
 export const usersSlice = createSlice({
@@ -20,10 +21,17 @@ export const usersSlice = createSlice({
     incrementByAmount: (state, action) => {
       state.value += action.payload;
     },
+    signIn: (state, action) => {
+      state.isLoggedIn = true;
+    },
+    signOut: (state, action) => {
+      state.isLoggedIn = false;
+    },
   },
 });
 
-export const { increment, decrement, incrementByAmount } = usersSlice.actions;
+export const { increment, decrement, incrementByAmount, signIn, signOut } =
+  usersSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type
 export const selectCount = (state) => state.counter.value;
