@@ -3,6 +3,7 @@
 from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 import os
+from util import *
 import requests
 import firebase_admin
 from firebase_admin import firestore, credentials
@@ -75,6 +76,10 @@ def find_closest_point():
         "distance": closest_distance
     })
 
+@app.route("/fetch-all", methods=["POST"])
+def fetch_and_return_all_data():
+    data = all_ppl_locations()
+    return jsonify({"data" : data})
   
 # driver function
 if __name__ == '__main__':
