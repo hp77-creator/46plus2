@@ -97,8 +97,14 @@ def book_slot():
         data.pop('user_id')
         data['location_id'] = "/ppl_locations/" + data['location_id']
         doc_ref.set(data)
+        return jsonify({
+            'status' : "OK"
+        })
     except Exception as e:
         print(e)
+        return jsonify({
+            'error' : e
+        })
   
 # driver function
 if __name__ == '__main__':
