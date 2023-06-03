@@ -4,76 +4,70 @@ from flask import Flask, jsonify, request
 from dotenv import load_dotenv
 import os
 import requests
-# import googlemaps
-# from datetime import datetime
+import firebase_admin
+from firebase_admin import firestore, credentials
 load_dotenv()
 
-# gmaps = googlemaps.Client(key=os.get('api_key'))
-
-# Geocoding an address
-# geocode_result = gmaps.geocode('1600 Amphitheatre Parkway, Mountain View, CA')
-
-# Look up an address with reverse geocoding
-# reverse_geocode_result = gmaps.reverse_geocode((40.714224, -73.961452))
-
-# Request directions via public transit
-# now = datetime.now()
-# directions_result = gmaps.directions("Sydney Town Hall",
-#                                      "Parramatta, NSW",
-#                                      mode="transit",
-#                                      departure_time=now)
-
-# Validate an address with address validation
-# addressvalidation_result =  gmaps.addressvalidation(['1600 Amphitheatre Pk'], 
-#                                                     regionCode='US',
-#                                                     locality='Mountain View', 
-#                                                     enableUspsCass=True)
-
-# Set the latitude and longitude coordinates for the starting and destination points
-lat1 = 37.7749
-lon1 = -122.4194
-lat2 = 34.0522
-lon2 = -118.2437
-
-# Use the OpenStreetMap Nominatim API to convert coordinates to addresses
-geocoding_url = lambda lat, lon : f"https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lon}&format=json"
-response = requests.get( )
-data = response.json()
-start_address = data["display_name"]
-
-geocoding_url = f"https://nominatim.openstreetmap.org/reverse?lat={lat2}&lon={lon2}&format=json"
-response = requests.get(geocoding_url)
-data = response.json()
-destination_address = data["display_name"]
-
-# Use the OpenStreetMap Directions API to request driving directions
-routing_url = f"https://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}?overview=false"
-response = requests.get(routing_url)
-data = response.json()
-
-# Extract the driving distance from the response
-distance = data["routes"][0]["distance"] / 1000  # Convert meters to kilometers
-
-# Print the driving distance and addresses
-print(f"Starting Point: {start_address}")
-print(f"Destination: {destination_address}")
-print(f"The driving distance is: {distance} km")
-
+cred = credentials.Certificate('key.json')
+firebase_admin.initialize_app(cred)
+db = firestore.client()
 
 # creating a Flask app
 app = Flask(__name__)
 
-@app.route('/', methods = ['GET', 'POST'])
+@app.route('/', methods = ['GET'])
 def home():
     if(request.method == 'GET'):
   
         data = "hello world"
         return jsonify({'data': data})
 
+def get_driving_distance(lat1, lon1, lat2, lon2):
+    # Use the OSRM API to calculate the driving distance
+    url = f"http://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}"
+    response = requests.get(url)
+    data = response.json()
 
-@app.route('/', methods = ['POST'])
-def nearest_ppl():
-    pass
+    # Extract the driving distance from the API response
+    distance = data["routes"][0]["distance"]  # Distance in meters
+
+    return distance
+
+@app.route("/closest_point", methods=["POST"])
+def find_closest_point():
+    data = request.get_json()
+    lat = data["lat"]
+    lon = data["lon"]
+
+    # Retrieve all data points from the Firestore collection
+    collection_ref = db.collection("ppl_locations")
+    docs = collection_ref.get()
+
+    closest_distance = float("inf")
+    closest_point = None
+
+    # Iterate through all data points and find the closest one
+    for doc in docs:
+        doc_data = doc.to_dict()
+        point_geopoint = doc_data["location"]
+
+        # Retrieve latitude and longitude from the GeoPoint
+        point_lat = point_geopoint.latitude
+        point_lon = point_geopoint.longitude
+
+        # Calculate the driving distance using an external API (e.g., Google Maps)
+        distance = get_driving_distance(lat, lon, point_lat, point_lon)
+
+        # Check if the current data point is the closest so far
+        if distance < closest_distance:
+            closest_distance = distance
+            closest_point = doc_data
+
+    return jsonify({
+        "closest_point": closest_point,
+        "distance": closest_distance
+    })
+
   
 # driver function
 if __name__ == '__main__':
