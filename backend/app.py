@@ -7,6 +7,8 @@ from util import *
 import requests
 import firebase_admin
 from firebase_admin import firestore, credentials
+import json
+import datetime
 load_dotenv()
 
 cred = credentials.Certificate('key.json')
@@ -93,30 +95,63 @@ def fetch_and_return_all_data():
             'error' : e
         })
 
-@app.route("/book", methods=["POST"])
+@app.route('/user/bookings/fetch-all', methods = ['POST'])
+def fetch_all_bookings_of_user():
+    try:
+        data = request.get_json()
+        user_id = data['user_id']
+        booking_db = db.collection('users').document(user_id).collection('bookings')
+        booking_doc = booking_db.get()
+        bookings_data = []
+        for book in booking_doc:
+            book_data = book.to_dict()
+            book_data['id'] = book.id
+            bookings_data.append(book_data)
+        
+        return jsonify({
+            'bookings' : bookings_data
+        })
+
+    except Exception as e:
+        return jsonify({
+            'error' : str(e)
+        })
+
+@app.route("/allot", methods=["POST"])
 def book_slot():
     try:
-        data = request.get_json()  
-        ppl_db = db.collection('ppl_locations').where("name", "==", data['location_id']).get()
-        available_count = ppl_db.to_dict()['available_count']
+        data = request.get_json() 
+        ppl_db = db.document('users/'+data['user_id']+'/bookings/'+data['booking_id']).get() 
+       
+        booking_object = ppl_db.to_dict()
+        location_ref = booking_object['location_id']
 
-        if available_count != 0:
-            available_count -= 1
-        else:
-            return jsonify({
-                'error' : 'Slots are full please select different PPL.'
-            })
+        location_object = location_ref.get().to_dict()
+        
+        all_slots = location_object['slots']
+        selected_slot = None
+        selected_index = -1
+        tmp_index = -1
+        for eachslot in all_slots:
+            tmp_index = tmp_index+1
+            if 'isLocked' in eachslot and  eachslot['isLocked'] == True:
+                continue
+            else:
+                selected_index = tmp_index
+                selected_slot = eachslot
+                break;
+        
+        if(selected_slot == None):
+            return jsonify({'error':'No seats left!'})
 
-        data['location_id'] = "/ppl_locations/" + data['location_id'].split('/')[-1]
-        data.pop('user_id')
-        doc_ref = db.collection("users").document(data['user_id']).collection('bookings').document()
-        doc_ref.set(data)
-        ppl_db.update({'available_count' : available_count})
-
+        print(selected_index)
+        all_slots[selected_index]['isLocked'] = True
+        location_ref.update({"slots":all_slots})
         return jsonify({
             'status' : "OK",
-            'data' : data
+            "seat_alloted":selected_slot
         })
+
 
     except Exception as e:
         print(e)
@@ -124,7 +159,7 @@ def book_slot():
             'error' : e
         })
 
-@app.route("/unbook", methods=['POST'])
+@app.route("/deallocate", methods=['POST'])
 def unbook_slot():
     try:
         data = request.get_json()
@@ -161,4 +196,4 @@ def unbook_slot():
 # driver function
 if __name__ == '__main__':
   
-    app.run(debug = True)
+    app.run(debug = True, port=8080)
