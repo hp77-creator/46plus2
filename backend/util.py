@@ -1,11 +1,4 @@
-import firebase_admin
-from firebase_admin import firestore, credentials
-
-cred = credentials.Certificate('key.json')
-firebase_admin.initialize_app(cred)
-db = firestore.client()
-
-def all_ppl_locations():
+def all_ppl_locations(db):
     collection_ref = db.collection("ppl_locations")
     docs = collection_ref.get()
     data = list()
