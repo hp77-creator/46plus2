@@ -85,18 +85,70 @@ def find_closest_point():
 
 @app.route("/fetch-all", methods=["GET"])
 def fetch_and_return_all_data():
-    data = all_ppl_locations(db=db)
-    return jsonify({"data" : data})
+    try:
+        data = all_ppl_locations(db=db)
+        return jsonify({"data" : data})
+    except Exception as e:
+        return jsonify({
+            'error' : e
+        })
 
 @app.route("/book", methods=["POST"])
 def book_slot():
     try:
+        data = request.get_json()  
+        ppl_db = db.collection('ppl_locations').where("name", "==", data['location_id']).get()
+        available_count = ppl_db.to_dict()['available_count']
+
+        if available_count != 0:
+            available_count -= 1
+        else:
+            return jsonify({
+                'error' : 'Slots are full please select different PPL.'
+            })
+
+        data['location_id'] = "/ppl_locations/" + data['location_id'].split('/')[-1]
+        data.pop('user_id')
+        doc_ref = db.collection("users").document(data['user_id']).collection('bookings').document()
+        doc_ref.set(data)
+        ppl_db.update({'available_count' : available_count})
+
+        return jsonify({
+            'status' : "OK",
+            'data' : data
+        })
+
+    except Exception as e:
+        print(e)
+        return jsonify({
+            'error' : e
+        })
+
+@app.route("/unbook", methods=['POST'])
+def unbook_slot():
+    try:
         data = request.get_json()
+        
         collection_ref = db.collection("users").document(data['user_id']).collection('bookings')
         doc_ref = collection_ref.document()
         data.pop('user_id')
-        data['location_id'] = "/ppl_locations/" + data['location_id']
+        
+        ppl_db = db.collection('ppl_locations').where("name", "==", data['location_id'])
+        ppl_db = ppl_db.get()
+        available_count = ppl_db.to_dict()['available_count']
+
+        if available_count != 0:
+            available_count += 1
+        else:
+            return jsonify({
+                'error' : 'Slots are full please select different PPL.'
+            })
+
+        data['location_id'] = "/ppl_locations/" + data['location_id'].split('/')[-1]
+        
         doc_ref.set(data)
+        ppl_db.update({'available_count' : available_count})
+        
         return jsonify({
             'status' : "OK"
         })
