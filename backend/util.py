@@ -12,6 +12,7 @@ def all_ppl_locations(db):
         point_lat = point_geopoint.latitude
         point_lon = point_geopoint.longitude
         data[count]['location'] = {'lat' : point_lat, 'lon' : point_lon}
+        data[count]['id'] = doc.id
         count += 1
     
     return data

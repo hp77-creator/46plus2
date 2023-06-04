@@ -9,6 +9,9 @@ import firebase_admin
 from firebase_admin import firestore, credentials
 import json
 import datetime
+from flask_ngrok import run_with_ngrok
+from flask_cors import CORS, cross_origin
+
 load_dotenv()
 
 cred = credentials.Certificate('key.json')
@@ -17,7 +20,8 @@ db = firestore.client()
 
 # creating a Flask app
 app = Flask(__name__)
-
+CORS(app)
+#run_with_ngrok(app)
 @app.route('/', methods = ['GET'])
 def home():
     if(request.method == 'GET'):
@@ -108,6 +112,8 @@ def fetch_all_bookings_of_user():
             book_data['id'] = book.id
             bookings_data.append(book_data)
         
+        print(bookings_data)
+        
         return jsonify({
             'bookings' : bookings_data
         })
@@ -117,8 +123,86 @@ def fetch_all_bookings_of_user():
             'error' : str(e)
         })
 
-@app.route("/allocate", methods=["POST"])
+@app.route("/book", methods=["POST"])
 def book_slot():
+    try:
+        data = request.get_json()  
+        ppl_db = db.collection('ppl_locations').get()
+        ppl_for_booking = None
+        for ppl in ppl_db:
+            if(ppl.id == data['location_id']):
+                ppl_for_booking = ppl
+                break
+        
+        if(ppl_for_booking == None):
+            return jsonify({
+                'error' : 'Location not found.'
+            })
+
+        available_count = 0
+        for ppl in ppl_for_booking.get('slots'):
+            if ppl['isLocked'] == False:
+                available_count += 1
+
+        if available_count == 0:
+            return jsonify({
+                'error' : 'Slots are full please select different PPL.'
+            })
+        
+        available_count -= 1
+
+        data['location_id'] = "/ppl_locations/" + data['location_id'].split('/')[-1]
+        doc_ref = db.collection("users").document(data['user_id']).collection('bookings').document()
+        doc_ref.set(data)
+        data['booking_id'] = doc_ref.id
+
+        return jsonify({
+            'status' : "OK",
+            'data' : data
+        })
+
+    except Exception as e:
+        print(e)
+        return jsonify({
+            'error' : str(e)
+        })
+
+# @app.route("/unbook", methods=['POST'])
+# def unbook_slot():
+#     try:
+#         data = request.get_json()
+        
+#         collection_ref = db.collection("users").document(data['user_id']).collection('bookings')
+#         doc_ref = collection_ref.document()
+#         data.pop('user_id')
+        
+#         ppl_db = db.collection('ppl_locations').where("name", "==", data['location_id'])
+#         ppl_db = ppl_db.get()
+#         available_count = ppl_db.to_dict()['available_count']
+
+#         if available_count != 0:
+#             available_count += 1
+#         else:
+#             return jsonify({
+#                 'error' : 'Slots are full please select different PPL.'
+#             })
+
+#         data['location_id'] = "/ppl_locations/" + data['location_id'].split('/')[-1]
+        
+#         doc_ref.set(data)
+#         ppl_db.update({'available_count' : available_count})
+        
+#         return jsonify({
+#             'status' : "OK"
+#         })
+#     except Exception as e:
+#         print(e)
+#         return jsonify({
+#             'error' : e
+#         })
+
+@app.route("/allocate", methods=["POST"])
+def allocation():
     try:
         data = request.get_json() 
         bookingdoc_ref = db.document('users/'+data['user_id']+'/bookings/'+data['booking_id'])
@@ -129,7 +213,7 @@ def book_slot():
         if("status" in booking_object and (booking_object['status'] == "completed" or booking_object['status'] == "onboarded") ):
             return jsonify({'error':'Ticket is already used, please purchase another ticket! Thank You.'})
 
-        location_ref = booking_object['location_id']
+        location_ref = db.collection('ppl_locations').document(booking_object['location_id'])
 
         location_object = location_ref.get().to_dict()
         
@@ -145,7 +229,7 @@ def book_slot():
             else:
                 selected_index = tmp_index
                 selected_slot = eachslot
-                break;
+                break
         
         if(selected_slot == None):
             return jsonify({'error':'No seats left!'})
@@ -168,14 +252,14 @@ def book_slot():
         })
 
 @app.route("/deallocate", methods=['POST'])
-def unbook_slot():
+def deallocate():
     try:
         data = request.get_json() 
         bookingdoc_ref = db.document('users/'+data['user_id']+'/bookings/'+data['booking_id'])
         ppl_db = bookingdoc_ref.get()
        
         booking_object = ppl_db.to_dict()
-        location_ref = booking_object['location_id']
+        location_ref = db.collection('ppl_locations').document(booking_object['location_id'])
 
         location_object = location_ref.get().to_dict()
         all_slots = location_object['slots']
@@ -198,4 +282,4 @@ def unbook_slot():
 # driver function
 if __name__ == '__main__':
   
-    app.run(debug = True, port=8080)
+    app.run(host='0.0.0.0', port=8090, debug=True)
