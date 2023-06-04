@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "85253185174",
+    "project_id": "sir-park-allot",
+    "storage_bucket": "sir-park-allot.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:85253185174:android:21dbcf63902529895d2cb7",
+        "android_client_info": {
+          "package_name": "com.example.user_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "85253185174-nann1v4dnlf19v2ooian7a7vljc4vroj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA0QiuAVYJEJ9gUXIL52qpQF5U_BCSFeIQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "85253185174-nann1v4dnlf19v2ooian7a7vljc4vroj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
