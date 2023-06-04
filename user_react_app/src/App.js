@@ -4,6 +4,7 @@ import Home from "./redux/views/home";
 import Login from "./redux/views/login";
 import { useState } from "react";
 import { useSelector } from "react-redux";
+import History from "./redux/views/history";
 
 function App() {
   const userState = useSelector((state) => state.user);
@@ -11,7 +12,12 @@ function App() {
   if (!userState.isLoggedIn) {
     return <Login />;
   } else {
-    return <Home />;
+    return (
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/history" element={<History />} />
+      </Routes>
+    );
   }
 }
 

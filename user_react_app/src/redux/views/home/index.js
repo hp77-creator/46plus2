@@ -21,27 +21,11 @@ const Home = () => {
   const items = [
     {
       key: "1",
-      label: (
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          href="https://www.antgroup.com"
-        >
-          Booking History
-        </a>
-      ),
+      label: <Link to="/history">Booking History</Link>,
     },
     {
       key: "2",
-      label: (
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          href="https://www.aliyun.com"
-        >
-          Settings
-        </a>
-      ),
+      label: <Link>Settings</Link>,
     },
     {
       key: "3",
