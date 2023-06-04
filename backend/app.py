@@ -117,13 +117,18 @@ def fetch_all_bookings_of_user():
             'error' : str(e)
         })
 
-@app.route("/allot", methods=["POST"])
+@app.route("/allocate", methods=["POST"])
 def book_slot():
     try:
         data = request.get_json() 
-        ppl_db = db.document('users/'+data['user_id']+'/bookings/'+data['booking_id']).get() 
+        bookingdoc_ref = db.document('users/'+data['user_id']+'/bookings/'+data['booking_id'])
+        ppl_db = bookingdoc_ref.get()
        
         booking_object = ppl_db.to_dict()
+        # This check is to allow multiple chec
+        if("status" in booking_object and (booking_object['status'] == "completed" or booking_object['status'] == "onboarded") ):
+            return jsonify({'error':'Ticket is already used, please purchase another ticket! Thank You.'})
+
         location_ref = booking_object['location_id']
 
         location_object = location_ref.get().to_dict()
@@ -132,6 +137,7 @@ def book_slot():
         selected_slot = None
         selected_index = -1
         tmp_index = -1
+        # linear algorithm to check which slots are available
         for eachslot in all_slots:
             tmp_index = tmp_index+1
             if 'isLocked' in eachslot and  eachslot['isLocked'] == True:
@@ -145,7 +151,9 @@ def book_slot():
             return jsonify({'error':'No seats left!'})
 
         print(selected_index)
-        all_slots[selected_index]['isLocked'] = True
+        all_slots[selected_index]['isLocked'] = True 
+        bookingdoc_ref.update({"status":"onboarded"})
+        bookingdoc_ref.update({"seat_no":selected_index})
         location_ref.update({"slots":all_slots})
         return jsonify({
             'status' : "OK",
@@ -162,31 +170,25 @@ def book_slot():
 @app.route("/deallocate", methods=['POST'])
 def unbook_slot():
     try:
-        data = request.get_json()
-        
-        collection_ref = db.collection("users").document(data['user_id']).collection('bookings')
-        doc_ref = collection_ref.document()
-        data.pop('user_id')
-        
-        ppl_db = db.collection('ppl_locations').where("name", "==", data['location_id'])
-        ppl_db = ppl_db.get()
-        available_count = ppl_db.to_dict()['available_count']
+        data = request.get_json() 
+        bookingdoc_ref = db.document('users/'+data['user_id']+'/bookings/'+data['booking_id'])
+        ppl_db = bookingdoc_ref.get()
+       
+        booking_object = ppl_db.to_dict()
+        location_ref = booking_object['location_id']
 
-        if available_count != 0:
-            available_count += 1
-        else:
-            return jsonify({
-                'error' : 'Slots are full please select different PPL.'
-            })
+        location_object = location_ref.get().to_dict()
+        all_slots = location_object['slots']
+        
+        selected_index = booking_object['seat_no']
+        print(selected_index)
+        all_slots[selected_index]['isLocked'] = False
 
-        data['location_id'] = "/ppl_locations/" + data['location_id'].split('/')[-1]
-        
-        doc_ref.set(data)
-        ppl_db.update({'available_count' : available_count})
-        
-        return jsonify({
-            'status' : "OK"
-        })
+        # now updating all the slots there
+        location_ref.update({"slots":all_slots})
+        bookingdoc_ref.update({"status":"completed"})
+        return jsonify({'status':"Ok", "message":"Deallocated"})
+
     except Exception as e:
         print(e)
         return jsonify({
