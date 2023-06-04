@@ -4,6 +4,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 const initialState = {
   value: 0,
   isLoggedIn: true,
+  parkingLots: []
 };
 
 export const counterSlice = createSlice({
@@ -27,10 +28,13 @@ export const counterSlice = createSlice({
     signOut: (state) => {
       state.isLoggedIn = false;
     },
+    addParkingLots: (state, action) => {
+      state.parkingLots = action.payload;
+    }
   },
 });
 
-export const { increment, decrement, incrementByAmount, signIn, signOut } =
+export const { increment, decrement, incrementByAmount, signIn, signOut, addParkingLots } =
   counterSlice.actions;
 
 // Other code such as selectors can use the imported `RootState` type

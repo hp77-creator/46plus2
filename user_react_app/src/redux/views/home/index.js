@@ -14,10 +14,32 @@ import MapView from "../mapview";
 import { MenuOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { signOut } from "../../user";
+import { addParkingLots, signOut } from "../../user";
+import {useState, useEffect} from 'react';
+
+const url = 'http://10.172.53.223:8090/fetch-all'
 
 const Home = () => {
   const dispatch = useDispatch();
+  const [ppl, setPpl] = useState([]);
+
+  const fetchPPL = async()=>{
+    try{
+      const response = await fetch(url)
+      const ppls = await response.json()
+      
+      setPpl(ppls.data)
+      dispatch(addParkingLots(ppls.data))
+    }
+    catch(error){
+      console.log(error)
+    }
+  }
+
+  useEffect(()=>{
+    fetchPPL()
+  }, [])
+
   const items = [
     {
       key: "1",
@@ -131,10 +153,8 @@ const Home = () => {
             >
               {" "}
               <Form.Item name="parkinglocations">
-                <Select value={"disabled"}>
-                  <Select.Option disabled value="disabled">
-                    Please Select the Parking Lot Locations
-                  </Select.Option>
+                <Select options={ppl.map((each)=>{return {value: each.id, label: each.name}})}>
+                
                 </Select>
               </Form.Item>
               <Form.Item name="time">
