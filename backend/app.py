@@ -1,6 +1,6 @@
 # Using flask to make an api
 # import necessary libraries and functions
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, Response
 from dotenv import load_dotenv
 import os
 from util import *
@@ -21,7 +21,9 @@ db = firestore.client()
 # creating a Flask app
 app = Flask(__name__)
 CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 #run_with_ngrok(app)
+
 @app.route('/', methods = ['GET'])
 def home():
     if(request.method == 'GET'):
@@ -99,9 +101,15 @@ def fetch_and_return_all_data():
             'error' : e
         })
 
-@app.route('/user/bookings/fetch-all', methods = ['POST'])
+@app.route('/users/bookings/fetch-all', methods = ['POST', 'OPTIONS'])
 def fetch_all_bookings_of_user():
     try:
+        if(request.method == "OPTIONS"):
+            response.headers.add("Access-Control-Allow-Origin", "*")
+            response.headers.add('Access-Control-Allow-Methods',' GET, POST, PATCH, PUT, DELETE, OPTIONS')
+            response.headers.add('Access-Control-Allow-Headers','Origin, Content-Type, X-Auth-Token')
+            return Response(status=201)
+            
         data = request.get_json()
         user_id = data['user_id']
         booking_db = db.collection('users').document(user_id).collection('bookings')
@@ -114,14 +122,19 @@ def fetch_all_bookings_of_user():
         
         print(bookings_data)
         
-        return jsonify({
+        response = jsonify({
             'bookings' : bookings_data
         })
 
     except Exception as e:
-        return jsonify({
+        response = jsonify({
             'error' : str(e)
         })
+
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add('Access-Control-Allow-Methods',' GET, POST, PATCH, PUT, DELETE, OPTIONS')
+        response.headers.add('Access-Control-Allow-Headers','Origin, Content-Type, X-Auth-Token')
+    return response
 
 @app.route("/book", methods=["POST"])
 def book_slot():
@@ -135,7 +148,7 @@ def book_slot():
                 break
         
         if(ppl_for_booking == None):
-            return jsonify({
+            response =  jsonify({
                 'error' : 'Location not found.'
             })
 
@@ -145,7 +158,7 @@ def book_slot():
                 available_count += 1
 
         if available_count == 0:
-            return jsonify({
+            response = jsonify({
                 'error' : 'Slots are full please select different PPL.'
             })
         
@@ -156,10 +169,13 @@ def book_slot():
         doc_ref.set(data)
         data['booking_id'] = doc_ref.id
 
-        return jsonify({
+        response = jsonify({
             'status' : "OK",
             'data' : data
         })
+
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        return response
 
     except Exception as e:
         print(e)
