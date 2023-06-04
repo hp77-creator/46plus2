@@ -8,7 +8,8 @@ import History from "./redux/views/history";
 
 function App() {
   const userState = useSelector((state) => state.user);
-
+  
+  
   if (!userState.isLoggedIn) {
     return <Login />;
   } else {

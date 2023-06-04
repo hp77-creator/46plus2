@@ -13,16 +13,17 @@ import {
 import MapView from "../mapview";
 import { MenuOutlined } from "@ant-design/icons";
 import { Link } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { addParkingLots, signOut } from "../../user";
+import { useDispatch, useSelector } from "react-redux";
+import { addBookings, addParkingLots, signOut } from "../../user";
 import {useState, useEffect} from 'react';
 
-const url = 'http://10.172.53.223:8090/fetch-all'
+const url = 'http://10.172.53.223:8090/fetch-all';
 
 const Home = () => {
   const dispatch = useDispatch();
   const [ppl, setPpl] = useState([]);
-
+  const userState = useSelector((state) => state.user);
+  
   const fetchPPL = async()=>{
     try{
       const response = await fetch(url)
@@ -160,7 +161,7 @@ const Home = () => {
               <Form.Item name="time">
                 <TimePicker.RangePicker style={{ width: "100%" }} />
               </Form.Item>
-              <Form.Item name="time">
+              <Form.Item name="reason">
                 <Input type="text" placeholder="Please enter the reason" />
               </Form.Item>
               <Form.Item>
