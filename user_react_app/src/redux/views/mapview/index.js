@@ -3,6 +3,7 @@ import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import { useSelector } from "react-redux";
 
 let DefaultIcon = L.icon({
   iconUrl: icon,
@@ -12,6 +13,7 @@ let DefaultIcon = L.icon({
 L.Marker.prototype.options.icon = DefaultIcon;
 
 const MapView = () => {
+  const parkingLots = useSelector(state => state.user.parkingLots );
   return (
     <MapContainer
       center={[19.076, 72.8777]}
@@ -34,6 +36,15 @@ const MapView = () => {
           Fare <b>INR. 110</b> <br /> Easily customizable.
         </Popup>
       </Marker>
+      {parkingLots.map((pL,ind) => 
+        <Marker position={[pL.location.lat, pL.location.lon]} key={ind}>
+        <Popup>
+          <h2>
+            {pL.name}
+            </h2>Fare <b>INR. {pL.price}</b> <br /> Easily customizable.
+        </Popup>
+      </Marker>
+)}
     </MapContainer>
   );
 };
