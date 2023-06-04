@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:user_app/screeens/login.dart' show LoginPage;
-import 'package:user_app/screeens/signup.dart' show SignupPage;
+import 'package:user_app/ui/auth/login_page.dart' show LoginPage;
+// import 'package:user_app/screeens/signup.dart' show SignupPage;
 import 'package:user_app/map.dart' show MapSample;
 
-class Routers {
+class Routes {
+  Routes._();
+  
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
       case LoginPage.route:
         return MaterialPageRoute(builder: (_) => LoginPage());
-      case SignupPage.route:
-        return MaterialPageRoute(builder: (_) => SignupPage());
-      case LoginPage.route:
+      // case SignupPage.route:
+      //   return MaterialPageRoute(builder: (_) => SignupPage());
+      case MapSample.route:
         return MaterialPageRoute(builder: (_) => MapSample());
       default:
         return MaterialPageRoute(builder: (_) {
